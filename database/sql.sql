@@ -93,3 +93,43 @@ CREATE TABLE `role_users` (
 COLLATE='utf8mb4_general_ci'
 ENGINE=InnoDB
 ;
+
+CREATE TABLE `columns` (
+	`id` INT NOT NULL AUTO_INCREMENT,
+	`name` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_general_ci',
+	`code` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_general_ci',
+	`description` TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
+	`parent_id` INT NULL DEFAULT NULL,
+	`status` INT NULL DEFAULT '1' COMMENT '0 已删除 1正常',
+	`created_at` TIMESTAMP NULL DEFAULT (now()),
+	`updated_at` TIMESTAMP NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	PRIMARY KEY (`id`) USING BTREE,
+	INDEX `FK_columns_columns` (`parent_id`) USING BTREE,
+	CONSTRAINT `FK_columns_columns` FOREIGN KEY (`parent_id`) REFERENCES `columns` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION
+)
+COLLATE='utf8mb4_general_ci'
+ENGINE=InnoDB
+AUTO_INCREMENT=14
+;
+CREATE TABLE `news` (
+	`id` INT NOT NULL AUTO_INCREMENT,
+	`title` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_general_ci',
+	`description` TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
+	`color` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
+	`picture` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
+	`content` TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
+	`priority` INT NULL DEFAULT NULL,
+	`source` TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
+	`creater_id` INT NULL DEFAULT NULL,
+	`updater_id` INT NULL DEFAULT NULL,
+	`columns` JSON NULL DEFAULT NULL,
+	`status` INT NULL DEFAULT '1' COMMENT '0 已删除 1正常',
+	`created_at` TIMESTAMP NULL DEFAULT (now()),
+	`updated_at` TIMESTAMP NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	PRIMARY KEY (`id`) USING BTREE
+)
+COLLATE='utf8mb4_general_ci'
+ENGINE=InnoDB
+ROW_FORMAT=DYNAMIC
+AUTO_INCREMENT=5
+;

@@ -22,7 +22,7 @@ module.exports = (req, res, next) => {
             return next(new UnauthorizedError("token无效"));
         }
         
-        req.auth = decoded
+        req.auth = decoded // {id: 1, iat: 1620, phone: "123456789", username: "admin"}
         next()
     })
 }

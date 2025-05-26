@@ -13,6 +13,10 @@ var userRouter = require('./routes/users');
 var permissionRouter = require('./routes/permissions');
 var departmentRouter = require('./routes/departments');
 var roleRouter = require('./routes/roles');
+var columnRouter = require('./routes/columns');
+var commonRouter = require('./routes/common');
+var newsRouter = require('./routes/news');
+
 var { init: redisInit  } = require('./redis/index');
 
 var app = express();
@@ -64,6 +68,9 @@ app.use('/user', userRouter);
 app.use('/department', departmentRouter);
 app.use("/permission", permissionRouter);
 app.use("/role", roleRouter);
+app.use("/column", columnRouter);
+app.use("/common", commonRouter);
+app.use("/news", newsRouter);
 
 redisInit();
 
