@@ -1,0 +1,9 @@
+# Ignore these files
+node_modules
+dist
+build
+*.log
+.env
+.git
+*.md
+*.yml

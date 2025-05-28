@@ -11,8 +11,8 @@ const departmentObject = (rowData) => {
     parentId: parent_id,
     isDeparntment: true,
     // children: [],
-  }
-}
+  };
+};
 
 const userObject = (rowData, parent_id) => {
   const { id, email, phone, username } = rowData;
@@ -26,11 +26,11 @@ const userObject = (rowData, parent_id) => {
     isDeparntment: false,
     isLeaf: true,
     // children: [],
-  }
-}
+  };
+};
 
 const getDepartmentsByParentId = async (parentId) => {
-  const condition = parentId == null || parentId === "" ? 'parent_id IS NULL' : 'parent_id = ?';
+  const condition = parentId == null || parentId === '' ? 'parent_id IS NULL' : 'parent_id = ?';
   let sql = `SELECT * FROM departments WHERE ${condition}`;
   let results = await query(sql, [parentId]);
   if (results.length) {
@@ -38,7 +38,7 @@ const getDepartmentsByParentId = async (parentId) => {
   } else {
     return [];
   }
-}
+};
 
 const getDepartmentHierarchy = async (parentId) => {
   const departments = await getDepartmentsByParentId(parentId);
@@ -51,7 +51,7 @@ const getDepartmentHierarchy = async (parentId) => {
     }
   }
   return departments;
-}
+};
 // Function to fetch a department by its ID
 const getDepartmentById = async (id) => {
   let sql = 'SELECT * FROM departments WHERE id = ? LIMIT 1';
@@ -61,7 +61,7 @@ const getDepartmentById = async (id) => {
   } else {
     return null;
   }
-}
+};
 
 const getDepartmentAndUserHierarchy = async (parentId) => {
   const departments = await getDepartmentsByParentId(parentId);
@@ -76,7 +76,7 @@ const getDepartmentAndUserHierarchy = async (parentId) => {
     }
   }
   return departments;
-}
+};
 
 const getUsersByDepartmentId = async (departmentId) => {
   let sql = `SELECT * FROM user_departments WHERE departmentId = ?`;
@@ -86,8 +86,8 @@ const getUsersByDepartmentId = async (departmentId) => {
     return [];
   }
 
-  const userIds = results.map(item => item.user_id);
-  const clause = userIds.map(() => "?").join(", ");
+  const userIds = results.map((item) => item.user_id);
+  const clause = userIds.map(() => '?').join(', ');
 
   sql = `SELECT * FROM users WHERE id IN (${clause})`;
   results = await query(sql, [departmentId]);
@@ -97,7 +97,7 @@ const getUsersByDepartmentId = async (departmentId) => {
   } else {
     return [];
   }
-}
+};
 
 // 向部门添加用户
 const insertUserToDepartment = async (userId, departmentId) => {
@@ -114,7 +114,7 @@ const insertUserToDepartment = async (userId, departmentId) => {
   } else {
     return false;
   }
-}
+};
 
 module.exports = {
   getDepartmentHierarchy,
@@ -122,4 +122,4 @@ module.exports = {
   getDepartmentsByParentId,
   insertUserToDepartment,
   getDepartmentAndUserHierarchy,
-}
+};

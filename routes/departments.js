@@ -2,7 +2,12 @@ const express = require('express');
 const { query } = require('../database/db');
 const { buildUpdateClause } = require('../utils/sql');
 const jwtVerify = require('../middleware/jwtVerify');
-const { getDepartmentById, getDepartmentHierarchy, getDepartmentsByParentId, insertUserToDepartment} = require('../service/departments');
+const {
+  getDepartmentById,
+  getDepartmentHierarchy,
+  getDepartmentsByParentId,
+  insertUserToDepartment,
+} = require('../service/departments');
 
 const router = express.Router();
 
@@ -13,19 +18,19 @@ router.post('/user', jwtVerify, async (req, res) => {
 
     // 检查 department_id 和 user_id 是否存在
     if (!departmentId || !userId) {
-      return res.status(200).json({ 
+      return res.status(200).json({
         code: 500,
         message: '缺少必要字段',
-        data: null
+        data: null,
       });
     }
 
     const result = await insertUserToDepartment(userId, departmentId);
     if (result) {
-      return res.status(200).json({ 
+      return res.status(200).json({
         code: 200,
         message: '添加成功',
-        data: null
+        data: null,
       });
     } else {
       res.status(200).json({ code: 500, message: '添加失败', data: null });
@@ -41,15 +46,15 @@ router.post('/users', jwtVerify, async (req, res) => {
 
     // 检查是否存在
     if (!departmentId || !Array.isArray(userIds) || !userIds.length) {
-      return res.status(200).json({ 
+      return res.status(200).json({
         code: 500,
         message: '缺少必要字段',
-        data: null
+        data: null,
       });
     }
 
     let successCount = 0;
-    let failIds = []
+    let failIds = [];
     for (const userId of userIds) {
       const result = await insertUserToDepartment(userId, departmentId);
       if (result) {
@@ -65,8 +70,8 @@ router.post('/users', jwtVerify, async (req, res) => {
         message: '插入成功',
         data: {
           successCount: successCount,
-          failIds: failIds
-        }
+          failIds: failIds,
+        },
       });
     } else {
       return res.status(200).json({
@@ -74,8 +79,8 @@ router.post('/users', jwtVerify, async (req, res) => {
         message: '部分插入失败',
         data: {
           successCount,
-          failIds: failIds
-        }
+          failIds: failIds,
+        },
       });
     }
   } catch (error) {
@@ -89,10 +94,10 @@ router.delete('/user', async (req, res) => {
 
     // 检查是否存在
     if (!departmentId || !userId) {
-      return res.status(200).json({ 
+      return res.status(200).json({
         code: 500,
         message: '缺少必要字段',
-        data: null
+        data: null,
       });
     }
 
@@ -101,16 +106,16 @@ router.delete('/user', async (req, res) => {
     const results = await query(sql, [department_id, user_id]);
 
     if (results.affectedRows > 0) {
-      return res.status(200).json({ 
+      return res.status(200).json({
         code: 200,
         message: '删除成功',
-        data: null
+        data: null,
       });
     } else {
-      return res.status(200).json({ 
+      return res.status(200).json({
         code: 500,
         message: '记录不存在',
-        data: null
+        data: null,
       });
     }
   } catch (error) {
@@ -124,10 +129,10 @@ router.delete('/users', async (req, res) => {
 
     // 检查 department_id 和 user_id 是否存在
     if (!departmentId || !Array.isArray(userIds) || !userIds.length) {
-      return res.status(200).json({ 
+      return res.status(200).json({
         code: 500,
         message: '缺少必要字段',
-        data: null
+        data: null,
       });
     }
 
@@ -136,16 +141,16 @@ router.delete('/users', async (req, res) => {
     const results = await query(sql, [department_id, ...userIds]);
 
     if (results.affectedRows > 0) {
-      return res.status(200).json({ 
+      return res.status(200).json({
         code: 200,
         message: '删除成功',
-        data: null
+        data: null,
       });
     } else {
-      return res.status(200).json({ 
+      return res.status(200).json({
         code: 500,
         message: '记录不存在',
-        data: null
+        data: null,
       });
     }
   } catch (error) {
@@ -159,16 +164,16 @@ router.get('/list', jwtVerify, async (req, res) => {
 
     const result = await getDepartmentsByParentId(parentId);
     if (result) {
-      return res.status(200).json({ 
+      return res.status(200).json({
         code: 200,
         message: '成功',
-        data: result
-       });
+        data: result,
+      });
     } else {
-      return res.status(200).json({ 
+      return res.status(200).json({
         code: 200,
         message: '成功',
-        data: []
+        data: [],
       });
     }
   } catch (error) {
@@ -182,16 +187,16 @@ router.get('/hierarchy', jwtVerify, async (req, res) => {
 
     const result = await getDepartmentHierarchy(parentId);
     if (result) {
-      return res.status(200).json({ 
+      return res.status(200).json({
         code: 200,
         message: '成功',
-        data: result
-       });
+        data: result,
+      });
     } else {
-      return res.status(200).json({ 
+      return res.status(200).json({
         code: 200,
         message: '成功',
-        data: []
+        data: [],
       });
     }
   } catch (error) {
@@ -205,16 +210,16 @@ router.get('/:id', jwtVerify, async (req, res) => {
 
     const result = await getDepartmentById(id);
     if (result) {
-      return res.status(200).json({ 
+      return res.status(200).json({
         code: 200,
         message: '成功',
-        data: result
-       });
+        data: result,
+      });
     } else {
-      return res.status(200).json({ 
+      return res.status(200).json({
         code: 500,
         message: '不存在',
-        data: null
+        data: null,
       });
     }
   } catch (error) {
@@ -232,25 +237,25 @@ router.post('/', jwtVerify, async (req, res) => {
     sql = 'SELECT * FROM departments WHERE parent_id = ? AND name = ?';
     results = await query(sql, [parentId, name]);
     if (results.length > 0) {
-      return res.status(200).json({ 
+      return res.status(200).json({
         code: 500,
         message: '同级部门名称不能重复',
-        data: null
-        });
+        data: null,
+      });
     }
- 
+
     sql = 'INSERT INTO departments (name, description, parent_id) VAlUES (?, ?, ?)';
     results = await query(sql, [name, description, parentId]);
 
     if (results) {
-      return res.status(200).json({ 
+      return res.status(200).json({
         code: 200,
         message: '添加成功',
         data: {
           id: results.insertId,
           name,
-          description
-        }
+          description,
+        },
       });
     } else {
       res.status(200).json({ code: 500, message: '添加失败', data: null });

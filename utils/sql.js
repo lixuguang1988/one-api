@@ -1,4 +1,4 @@
-const res = require("express/lib/response");
+const res = require('express/lib/response');
 
 /**
  * 构建更新语句
@@ -7,28 +7,28 @@ const res = require("express/lib/response");
  * @returns {string} 更新语句
  */
 function buildUpdateClause(fields, ...resetValues) {
-    const setClauseArray = [];
-    const values = [];
+  const setClauseArray = [];
+  const values = [];
 
-    Object.entries(fields).forEach(([key, value]) => {
-        if (value !== undefined) {
-            setClauseArray.push(`${key} = ?`);
-            values.push(value);
-        }
-    });
-
-    if (setClauseArray.length === 0) {
-        throw new Error('没有提供任何字段进行更新');
+  Object.entries(fields).forEach(([key, value]) => {
+    if (value !== undefined) {
+      setClauseArray.push(`${key} = ?`);
+      values.push(value);
     }
+  });
 
-    resetValues.forEach(resetValue => {
-        values.push(resetValue);
-    });
-    return {
-        setClause: setClauseArray.join(', '),
-        clause: setClauseArray,
-        values,
-    };
+  if (setClauseArray.length === 0) {
+    throw new Error('没有提供任何字段进行更新');
+  }
+
+  resetValues.forEach((resetValue) => {
+    values.push(resetValue);
+  });
+  return {
+    setClause: setClauseArray.join(', '),
+    clause: setClauseArray,
+    values,
+  };
 }
 
 /**
@@ -38,41 +38,40 @@ function buildUpdateClause(fields, ...resetValues) {
  * @returns {Object} - 包含setClause、clause和values的对象
  */
 const buildSelectClause = (conditions, resetValues = []) => {
-    const whereClauseArray = [];
-    const values = [];
-   
+  const whereClauseArray = [];
+  const values = [];
 
-    conditions.forEach(condition => {
-        if (condition.fieldValue !== undefined) {
-            if (condition.fieldValue  === null) {
-                whereClauseArray.push(`${condition.fieldName} is NULL`);
-            } else if (["IN", "NOT IN"].includes(condition.operator)) {
-                const placeholders = condition.fieldValue.map(() => '?').join(',');
-                whereClauseArray.push(`${condition.fieldName} ${condition.operator} (${placeholders})`);
-                values.push(...condition.fieldValue);
-            } else if (["LIKE"].includes(condition.operator)) {
-                whereClauseArray.push(`${condition.fieldName} ${condition.operator} ?`);
-                values.push(`%${condition.fieldValue}%`);
-            } else if (["JSON_CONTAINS"].includes(condition.operator)) {
-                whereClauseArray.push(`${condition.operator}(${condition.fieldName}  ?)`);
-                values.push(condition.fieldValue);
-            } else {
-                whereClauseArray.push(`${condition.fieldName} ${condition.operator} ?`);
-                values.push(condition.fieldValue);
-            }
-        }
-    });
+  conditions.forEach((condition) => {
+    if (condition.fieldValue !== undefined) {
+      if (condition.fieldValue === null) {
+        whereClauseArray.push(`${condition.fieldName} is NULL`);
+      } else if (['IN', 'NOT IN'].includes(condition.operator)) {
+        const placeholders = condition.fieldValue.map(() => '?').join(',');
+        whereClauseArray.push(`${condition.fieldName} ${condition.operator} (${placeholders})`);
+        values.push(...condition.fieldValue);
+      } else if (['LIKE'].includes(condition.operator)) {
+        whereClauseArray.push(`${condition.fieldName} ${condition.operator} ?`);
+        values.push(`%${condition.fieldValue}%`);
+      } else if (['JSON_CONTAINS'].includes(condition.operator)) {
+        whereClauseArray.push(`${condition.operator}(${condition.fieldName}  ?)`);
+        values.push(condition.fieldValue);
+      } else {
+        whereClauseArray.push(`${condition.fieldName} ${condition.operator} ?`);
+        values.push(condition.fieldValue);
+      }
+    }
+  });
 
-    resetValues.forEach(resetValue => {
-        values.push(resetValue);
-    });
+  resetValues.forEach((resetValue) => {
+    values.push(resetValue);
+  });
 
-    return {
-        whereClause: whereClauseArray.length ? " WHERE "  + whereClauseArray.join(' AND ') : ' ' ,
-        clause: whereClauseArray,
-        values,
-    }; 
-}
+  return {
+    whereClause: whereClauseArray.length ? ' WHERE ' + whereClauseArray.join(' AND ') : ' ',
+    clause: whereClauseArray,
+    values,
+  };
+};
 
 // const conditions = [
 //     {
@@ -95,60 +94,62 @@ const buildSelectClause = (conditions, resetValues = []) => {
 // console.log(whereClause); // 输出: WHERE (name LIKE ? AND age = ?) OR (status = ? AND role = ?)
 // console.log(values); // 输出: ['%John%', 25, 'active', 'admin']
 const buildGroupSelectClause = (conditions, resetValues = []) => {
-    const whereClauseArray = [];
-    const values = [];
+  const whereClauseArray = [];
+  const values = [];
 
-    const buildCondition = (condition) => {
-        if (condition.fieldValue !== undefined) {
-            if (condition.fieldValue === null) {
-                return `${condition.fieldName} IS NULL`;
-            } else if (["IN", "NOT IN"].includes(condition.operator)) {
-                const placeholders = condition.fieldValue.map(() => '?').join(',');
-                values.push(...condition.fieldValue);
-                return `${condition.fieldName} ${condition.operator} (${placeholders})`;
-            } else if (["LIKE"].includes(condition.operator)) {
-                values.push(`%${condition.fieldValue}%`);
-                return `${condition.fieldName} ${condition.operator} ?`;
-            } else {
-                values.push(condition.fieldValue);
-                return `${condition.fieldName} ${condition.operator} ?`;
-            }
-        }
-        return '';
-    };
+  const buildCondition = (condition) => {
+    if (condition.fieldValue !== undefined) {
+      if (condition.fieldValue === null) {
+        return `${condition.fieldName} IS NULL`;
+      } else if (['IN', 'NOT IN'].includes(condition.operator)) {
+        const placeholders = condition.fieldValue.map(() => '?').join(',');
+        values.push(...condition.fieldValue);
+        return `${condition.fieldName} ${condition.operator} (${placeholders})`;
+      } else if (['LIKE'].includes(condition.operator)) {
+        values.push(`%${condition.fieldValue}%`);
+        return `${condition.fieldName} ${condition.operator} ?`;
+      } else {
+        values.push(condition.fieldValue);
+        return `${condition.fieldName} ${condition.operator} ?`;
+      }
+    }
+    return '';
+  };
 
-    const buildGroup = (group, logicalOperator) => {
-        const groupClauses = group.map((condition) => {
-            if (condition.group) {
-                return `(${buildGroup(condition.group, condition.logicalOperator)})`;
-            } else {
-                return buildCondition(condition);
-            }
-        }).filter(clause => clause !== '');
-
-        return groupClauses.join(` ${logicalOperator || 'AND'} `);
-    };
-
-    conditions.forEach((condition) => {
+  const buildGroup = (group, logicalOperator) => {
+    const groupClauses = group
+      .map((condition) => {
         if (condition.group) {
-            whereClauseArray.push(`(${buildGroup(condition.group, condition.logicalOperator)})`);
+          return `(${buildGroup(condition.group, condition.logicalOperator)})`;
         } else {
-            const clause = buildCondition(condition);
-            if (clause) {
-                whereClauseArray.push(clause);
-            }
+          return buildCondition(condition);
         }
-    });
+      })
+      .filter((clause) => clause !== '');
 
-    resetValues.forEach(resetValue => {
-        values.push(resetValue);
-    });
+    return groupClauses.join(` ${logicalOperator || 'AND'} `);
+  };
 
-    return {
-        whereClause: whereClauseArray.length ? " WHERE " + whereClauseArray.join(' AND ') : ' ',
-        clause: whereClauseArray,
-        values,
-    };
+  conditions.forEach((condition) => {
+    if (condition.group) {
+      whereClauseArray.push(`(${buildGroup(condition.group, condition.logicalOperator)})`);
+    } else {
+      const clause = buildCondition(condition);
+      if (clause) {
+        whereClauseArray.push(clause);
+      }
+    }
+  });
+
+  resetValues.forEach((resetValue) => {
+    values.push(resetValue);
+  });
+
+  return {
+    whereClause: whereClauseArray.length ? ' WHERE ' + whereClauseArray.join(' AND ') : ' ',
+    clause: whereClauseArray,
+    values,
+  };
 };
 
 module.exports = { buildUpdateClause, buildSelectClause, buildGroupSelectClause };

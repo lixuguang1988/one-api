@@ -2,13 +2,12 @@ const express = require('express');
 const { query } = require('../database/db');
 const { buildSelectClause, buildUpdateClause } = require('../utils/sql');
 const jwtVerify = require('../middleware/jwtVerify');
-const { getColumnById, getHierarchy } = require('../service/columns');
 
 const router = express.Router();
 
 router.get('/list', jwtVerify, async (req, res) => {
   try {
-    const { currentPage = 1, pageSize = 10, name, code, parentId } = req.query;
+    const { name, code } = req.query;
 
     const conditions = [
       {
@@ -21,75 +20,69 @@ router.get('/list', jwtVerify, async (req, res) => {
         fieldValue: code || undefined,
         operator: 'LIKE',
       },
+      {
+        fieldName: 'parent_id',
+        fieldValue: null,
+        operator: 'IS',
+      },
     ];
 
     const { whereClause, values } = buildSelectClause(conditions, []);
 
-    let sql = `SELECT * FROM columns ${whereClause} ORDER BY updated_at DESC LIMIT ? OFFSET ?`;
-    let results = await query(sql, [
-      ...values,
-      parseInt(pageSize),
-      (parseInt(currentPage) - 1) * parseInt(pageSize),
-    ]);
-    let resCount = await query(`SELECT COUNT(*) AS total FROM columns ${whereClause}`, values);
+    let sql = `SELECT * FROM dicts ${whereClause} ORDER BY created_at DESC`;
+    let results = await query(sql, [...values]);
+    // let resCount = await query(`SELECT COUNT(*) AS total FROM dicts ${whereClause}`, values);
 
     if (results.length) {
       // 如果有结果，则遍历结果并获取父级栏目信息
-      for (const column of results) {
-        if (column.parent_id) {
-          const parentColumn = await getColumnById(column.parent_id);
-          column.parentId = parentColumn.id;
-          column.parentName = parentColumn.name;
-          column.parentCode = parentColumn.code;
+      for (const dict of results) {
+        sql = `SELECT * FROM dicts where parent_id = ? ORDER BY created_at DESC`;
+        const children = await query(sql, [dict.id]);
+        if (children.length) {
+          dict.children = children.map((item) => ({
+            ...item,
+            parentId: item.parent_id,
+          }));
         }
       }
       return res.status(200).json({
         code: 200,
         message: '成功',
-        data: {
-          total: resCount[0]?.total,
-          list: results,
-          currentPage: currentPage,
-          pageSize: pageSize,
-        },
+        data: results,
       });
     } else {
       return res.status(200).json({
         code: 200,
         message: '暂无数据',
-        data: {
-          total: 0,
-          list: [],
-          currentPage: currentPage,
-          pageSize: pageSize,
-        },
-      });
-    }
-  } catch (error) {
-    res.status(200).json({ code: 200, message: '注册失败2', data: error.toString() });
-  }
-});
-
-router.get('/hierarchy', jwtVerify, async (req, res) => {
-  try {
-    const { parentId } = req.params;
-
-    const result = await getHierarchy(parentId);
-    if (result) {
-      return res.status(200).json({
-        code: 200,
-        message: '成功',
-        data: result,
-      });
-    } else {
-      return res.status(200).json({
-        code: 200,
-        message: '成功',
         data: [],
       });
     }
   } catch (error) {
-    res.status(200).json({ code: 500, message: error.toString(), data: null });
+    res.status(200).json({ code: 500, message: '查询失败', data: error.toString() });
+  }
+});
+
+router.get('/:id/list', jwtVerify, async (req, res) => {
+  try {
+    const { id } = req.params;
+    let sql = `SELECT * FROM dicts where parent_id = ? ORDER BY updated_at DESC`;
+    let results = await query(sql, [id]);
+
+    if (results.length) {
+      return res.status(200).json({
+        code: 200,
+        message: '成功',
+        data: results,
+      });
+    } else {
+      return res.status(200).json({
+        code: 200,
+        message: '暂无数据',
+        data: [],
+      });
+    }
+  } catch (error) {
+    res.status(200).json({ code: 500, message: '查询失败', data: error.toString() });
   }
 });
 
@@ -100,7 +93,7 @@ router.post('/add', jwtVerify, async (req, res) => {
     let results;
     // 同名检查
     sql =
-      'SELECT * FROM columns WHERE (parent_id = ? OR parent_id IS NULL) AND (name = ? OR code = ?)';
+      'SELECT * FROM dicts WHERE (parent_id = ? OR parent_id IS NULL) AND (name = ? OR code = ?)';
     results = await query(sql, [parentId, name, code]);
     if (results.length > 0) {
       return res.status(200).json({
@@ -110,7 +103,7 @@ router.post('/add', jwtVerify, async (req, res) => {
       });
     }
 
-    sql = 'INSERT INTO columns SET ?';
+    sql = 'INSERT INTO dicts SET ?';
     results = await query(sql, { name, description, parent_id: parentId, code });
 
     if (results) {
@@ -121,6 +114,7 @@ router.post('/add', jwtVerify, async (req, res) => {
           id: results.insertId,
           name,
           description,
+          parentId,
         },
       });
     } else {
@@ -133,7 +127,26 @@ router.post('/add', jwtVerify, async (req, res) => {
 
 router.post('/update', async (req, res) => {
   try {
-    const { name, code, parentId, id } = req.body;
+    const { name, code, parentId, description, id } = req.body;
+    let sql, results;
+
+    // if (parentId) {
+    //   sql = `SELECT * FROM dicts WHERE id = ? LIMIT 1`;
+    //   results = await query(sql, [id]);
+    //   if (results.length === 0) {
+    //     return res.status(200).json({
+    //       code: 500,
+    //       message: '数据不存在',
+    //       data: null,
+    //     });
+    //   } else if (results[0].parent_id === null) {
+    //     return res.status(200).json({
+    //       code: 500,
+    //       message: '根节点不能修改为子节点',
+    //       data: null,
+    //     });
+    //   }
+    // }
 
     if (parentId === id) {
       return res.status(200).json({
@@ -153,12 +166,12 @@ router.post('/update', async (req, res) => {
 
     const { clause } = buildSelectClause(conditions, []); // (parent_id = ? OR parent_id IS NULL)
 
-    let sql = `SELECT * FROM columns WHERE (name = ? OR code = ?) AND ${clause[0]} AND id != ? LIMIT 1`;
+    sql = `SELECT * FROM dicts WHERE (name = ? OR code = ?) AND ${clause[0]} AND id != ? LIMIT 1`;
     const defaultValues = [name, code, id];
     if (parentId !== null) {
       defaultValues.splice(2, 0, parentId);
     }
-    let results = await query(sql, defaultValues);
+    results = await query(sql, defaultValues);
     if (results.length > 0) {
       return res.status(200).json({
         code: 500,
@@ -167,8 +180,11 @@ router.post('/update', async (req, res) => {
       });
     }
 
-    const { setClause, values } = buildUpdateClause({ name, code, parent_id: parentId }, [id]);
-    sql = `UPDATE columns SET ${setClause} WHERE id = ?`;
+    const { setClause, values } = buildUpdateClause(
+      { name, code, parent_id: parentId, description },
+      [id],
+    );
+    sql = `UPDATE dicts SET ${setClause} WHERE id = ?`;
     results = await query(sql, values);
     if (results.affectedRows > 0) {
       return res.status(200).json({
@@ -195,9 +211,23 @@ router.post('/update', async (req, res) => {
 router.delete('/:id', jwtVerify, async (req, res) => {
   try {
     const { id } = req.params;
-
-    let sql = 'DELETE FROM columns WHERE id = ?';
+    let sql = `SELECT * FROM dicts WHERE id = ? LIMIT 1`;
     let results = await query(sql, [id]);
+    if (results.length === 0) {
+      return res.status(200).json({
+        code: 200,
+        message: '删除成功',
+        data: null,
+      });
+    } else if (results[0].parent_id === null) {
+      return res.status(200).json({
+        code: 500,
+        message: '根节点不能删除',
+        data: null,
+      });
+    }
+    sql = 'DELETE FROM dicts WHERE id = ?';
+    results = await query(sql, [id]);
     if (results.affectedRows) {
       return res.status(200).json({
         code: 200,
