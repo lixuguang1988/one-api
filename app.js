@@ -16,6 +16,7 @@ var roleRouter = require('./routes/roles');
 var columnRouter = require('./routes/columns');
 var commonRouter = require('./routes/common');
 var dictRouter = require('./routes/dicts');
+var petRouter = require('./routes/pets');
 var newsRouter = require('./routes/news');
 
 var { init: redisInit } = require('./redis/index');
@@ -72,6 +73,7 @@ app.use('/column', columnRouter);
 app.use('/common', commonRouter);
 app.use('/news', newsRouter);
 app.use('/dict', dictRouter);
+app.use('/pet', petRouter);
 
 redisInit();
 

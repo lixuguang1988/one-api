@@ -29,14 +29,14 @@ router.get('/list', jwtVerify, async (req, res) => {
 
     const { whereClause, values } = buildSelectClause(conditions, []);
 
-    let sql = `SELECT * FROM dicts ${whereClause} ORDER BY created_at DESC`;
+    let sql = `SELECT * FROM dicts ${whereClause} ORDER BY created_at ASC`;
     let results = await query(sql, [...values]);
     // let resCount = await query(`SELECT COUNT(*) AS total FROM dicts ${whereClause}`, values);
 
     if (results.length) {
       // 如果有结果，则遍历结果并获取父级栏目信息
       for (const dict of results) {
-        sql = `SELECT * FROM dicts where parent_id = ? ORDER BY created_at DESC`;
+        sql = `SELECT * FROM dicts where parent_id = ? ORDER BY created_at ASC`;
         const children = await query(sql, [dict.id]);
         if (children.length) {
           dict.children = children.map((item) => ({
