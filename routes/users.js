@@ -214,22 +214,19 @@ router.get('/permission', jwtVerify, async (req, res) => {
       const roles = results.map((item) => item.role_id);
       sql = `SELECT * FROM roles WHERE id IN (${placeholders})`;
       results = await query(sql, [roles]);
-      // ["department", "department__add", "department__update", "department__delete", "user", "user__add", "user__update", "user__delete", "user-department"]
       const permissions = [];
       results.forEach((item) => {
         permissions.push(JSON.parse(item.permission));
       });
       const menus = {};
-      permissions.flat().forEach((permission) => {
-        if (permission.includes('__')) {
-          const [menu, action] = permission.split('__');
-          if (!menus[menu]) {
-            menus[menu] = [];
+      permissions.forEach((permission) => {
+        Object.keys(permission).forEach((key) => {
+          if (!menus[key]) {
+            menus[key] = [];
           }
-          menus[menu].push(action);
-        } else {
-          menus[permission] = [];
-        }
+          menus[key].push(permission[key]);
+          menus[key] = [...new Set(menus[key])];
+        });
       });
 
       return res.status(200).json({

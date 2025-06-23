@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.get('/list', jwtVerify, async (req, res) => {
   try {
-    const { currentPage = 1, pageSize = 10, keyword, status, columnId } = req.query;
+    const { currentPage = 1, pageSize = 10, keyword, status, colors, types } = req.query;
 
     const conditions = [
       {
@@ -17,9 +17,14 @@ router.get('/list', jwtVerify, async (req, res) => {
         operator: 'LIKE',
       },
       {
-        fieldName: 'n.status',
-        fieldValue: status,
-        operator: '=',
+        fieldName: 'n.color',
+        fieldValue: colors,
+        operator: 'IN',
+      },
+      {
+        fieldName: 'n.type',
+        fieldValue: types,
+        operator: 'IN',
       },
     ];
 
@@ -32,7 +37,7 @@ router.get('/list', jwtVerify, async (req, res) => {
       (parseInt(currentPage) - 1) * parseInt(pageSize),
     ]);
     let resCount = await query(
-      `SELECT COUNT(*) AS total FROM news n INNER JOIN users u ON n.updater_id = u.id ${whereClause}`,
+      `SELECT COUNT(*) AS total FROM pets n INNER JOIN users u ON n.updater_id = u.id ${whereClause}`,
       values,
     );
 

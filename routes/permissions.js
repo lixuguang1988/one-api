@@ -1,10 +1,10 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { query } = require('../database/db');
-const { hSet } = require('../redis/index');
 const { jwtConfig } = require('../config/index');
 const jwtVerify = require('../middleware/jwtVerify');
-const { hashPassword } = require('../utils/index');
+const { hSet } = require('../redis/index');
+const { getHierarchy } = require('../service/permissions');
 const { buildSelectClause, buildUpdateClause } = require('../utils/sql');
 
 const router = express.Router();
@@ -43,9 +43,25 @@ router.post('/add', async (req, res) => {
 
 router.post('/update', async (req, res) => {
   try {
-    const { menuName, menuCode, operation, id } = req.body;
+    const { menuName, menuCode, operation, id, parentId } = req.body;
 
-    let sql = 'SELECT * FROM permissions WHERE menuCode = ? AND id != ?';
+    if (parentId === id) {
+      return res.status(200).json({
+        code: 500,
+        message: '父级不能是自身',
+        data: null,
+      });
+    }
+
+    const conditions = [
+      {
+        fieldName: 'parent_id',
+        fieldValue: parentId,
+        operator: '=',
+      },
+    ];
+
+    let sql = 'SELECT * FROM permissions WHERE menuCode = ? AND id != ? LIMIT 1';
     let results = await query(sql, [menuCode, id]);
     if (results.length > 0) {
       return res.status(200).json({
@@ -56,7 +72,12 @@ router.post('/update', async (req, res) => {
     }
 
     const { setClause, values } = buildUpdateClause(
-      { menuName, menuCode, operation: Array.isArray(operation) ? operation.join(',') : '' },
+      {
+        menuName,
+        menuCode,
+        operation: Array.isArray(operation) ? operation.join(',') : '',
+        parent_id: parentId,
+      },
       [id],
     );
     sql = `UPDATE permissions SET ${setClause} WHERE id = ?`;
@@ -100,28 +121,15 @@ router.get('/list', jwtVerify, async (req, res) => {
       },
     ];
 
-    const { whereClause, values } = buildSelectClause(conditions, []);
-
-    let sql = `SELECT * FROM permissions ${whereClause} ORDER BY updated_at DESC LIMIT ? OFFSET ?`;
-    let results = await query(sql, [
-      ...values,
-      parseInt(pageSize),
-      (parseInt(currentPage) - 1) * parseInt(pageSize),
-    ]);
-    let resCount = await query(`SELECT COUNT(*) AS total FROM permissions ${whereClause}`, values);
+    const results = await getHierarchy(conditions, null);
 
     if (results.length) {
       return res.status(200).json({
         code: 200,
         message: '成功',
         data: {
-          total: resCount[0]?.total,
-          list: results.map((item) => {
-            return {
-              ...item,
-              operation: (item.operation || '').split(',').filter((item) => item),
-            };
-          }),
+          total: 0,
+          list: results,
           currentPage: currentPage,
           pageSize: pageSize,
         },
@@ -139,25 +147,19 @@ router.get('/list', jwtVerify, async (req, res) => {
       });
     }
   } catch (error) {
-    res.status(200).json({ code: 200, message: '注册失败2', data: error.toString() });
+    res.status(200).json({ code: 200, message: '暂无数据', data: error.toString() });
   }
 });
 
 router.get('/hierarchy', jwtVerify, async (req, res) => {
   try {
-    let sql = `SELECT * FROM permissions ORDER BY updated_at DESC`;
-    let results = await query(sql);
+    const results = await getHierarchy([], null);
 
     if (results.length) {
       return res.status(200).json({
         code: 200,
         message: '成功',
-        data: results.map((item) => {
-          return {
-            ...item,
-            operation: (item.operation || '').split(',').filter((item) => item),
-          };
-        }),
+        data: results,
       });
     } else {
       return res.status(200).json({
