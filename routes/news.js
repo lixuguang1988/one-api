@@ -44,7 +44,7 @@ router.get('/list', jwtVerify, async (req, res) => {
     if (results.length) {
       // 如果有结果，则遍历结果并获取父级栏目信息
       for (const item of results) {
-        if (item.columns) {
+        if (item.columns && item.columns !== '[]') {
           const columns = JSON.parse(item.columns);
           const placeholder = columns.map((column) => `?`).join(',');
           sql = `SELECT * FROM columns WHERE id IN (${placeholder})`;
@@ -79,7 +79,7 @@ router.get('/list', jwtVerify, async (req, res) => {
       });
     }
   } catch (error) {
-    res.status(200).json({ code: 200, message: '注册失败2', data: error.toString() });
+    res.status(200).json({ code: 200, message: '暂无数据', data: error.toString() });
   }
 });
 
@@ -205,6 +205,34 @@ router.delete('/:id', jwtVerify, async (req, res) => {
     }
   } catch (error) {
     res.status(200).json({ code: 500, message: '删除失败', data: error.toString() });
+  }
+});
+
+router.get('/:id', jwtVerify, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    let sql = `SELECT n.* FROM news n  WHERE id = ? ORDER BY updated_at DESC LIMIT 1`;
+    let results = await query(sql, [id]);
+
+    if (results.length) {
+      return res.status(200).json({
+        code: 200,
+        message: '成功',
+        data: {
+          ...results[0],
+          columns: JSON.parse(results[0].columns) || [],
+        },
+      });
+    } else {
+      return res.status(200).json({
+        code: 200,
+        message: '暂无数据',
+        data: null,
+      });
+    }
+  } catch (error) {
+    res.status(200).json({ code: 200, message: '暂无数据', data: error.toString() });
   }
 });
 
